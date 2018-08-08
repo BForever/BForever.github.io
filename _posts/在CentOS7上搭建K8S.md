@@ -1,0 +1,166 @@
+# 在CentOS7上搭建K8S
+## 来源
+中文教程 [http://blog.51cto.com/devingeng/2096495?from=singlemessage](http://blog.51cto.com/devingeng/2096495?from=singlemessage)
+
+官方文档 [https://kubernetes.io/docs/setup/independent/install-kubeadm/](https://kubernetes.io/docs/setup/independent/install-kubeadm/)
+## 准备
+### 1 centOS 7
+### 2 以root登陆（建议）
+### 3 关闭防火墙
+
+> 关闭firewall，iptables：
+`systemctl stop firewalld.service` #停止firewall
+> `systemctl disable firewalld.service` #禁止firewall开机启动
+
+> `firewall-cmd --state` #查看默认防火墙状态（关闭后显示not running，开启后显示running）
+
+### 4 关闭SElinux
+暂时关闭：
+`setenforce 0`
+永久关闭：
+`vim /etc/selinux/config`打开selinux配置文件
+
+找到SELINUX=参数
+
+参数可选（enforcing、permissive、disabled）
+
+disabled即为关闭SElinux
+
+### 5 关闭swap
+
+`swapoff -a`
+
+### 6 配置系统内核参数使流过网桥的流量也进入iptables/netfilter框架中，开启ipv4的forwarding
+
+> 在/etc/sysctl.conf中添加以下配置：
+> 
+ ```
+ net.bridge.bridge-nf-call-iptables = 1
+ net.bridge.bridge-nf-call-ip6tables = 1 
+ net.ipv4.ip_forward=1
+ ```
+ 并执行`sysctl -p`
+ 
+### 7 配置阿里云镜像
+
+```
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=0
+EOF
+yum -y install epel-release
+yum clean all
+yum makecache
+```
+
+## 安装相关工具
+>以下内容于51CTO博客作者Devin的原创作品整理而来，如需转载，请注明出处
+
+### 1 安装docker以及kubeadm相关工具
+`yum -y install docker kubelet kubeadm kubectl`
+
+### 2 启动docker以及kubeadm服务
+```
+systemctl enable docker && systemctl start docker
+systemctl enable kubelet && systemctl start kubelet
+```
+
+### 3 下载K8S相关镜像
+因为无法直接访问gcr.io下载镜像，所以需要配置一个国内的容器镜像加速器:
+
+登录 https://cr.console.aliyun.com/
+
+在页面中找到并点击镜像加速按钮，即可看到属于自己的专属加速链接，选择Centos版本后即可看到配置方法。
+
+解决完加速器的问题之后，开始下载k8s相关镜像，下载后将镜像名改为k8s.gcr.io/开头的名字，以便kubeadm识别使用:(注意将版本号替换为当前安装的版本）
+
+```
+#!/bin/bashimages=(kube-proxy-amd64:v1.11.0 kube-scheduler-amd64:v1.11.0 kube-controller-manager-amd64:v1.11.0 kube-apiserver-amd64:v1.11.0etcd-amd64:3.2.18 pause-amd64:3.1 kubernetes-dashboard-amd64:v1.8.3 k8s-dns-sidecar-amd64:1.14.8 k8s-dns-kube-dns-amd64:1.14.8k8s-dns-dnsmasq-nanny-amd64:1.14.8 coredns:1.1.3)for imageName in ${images[@]} ; do  docker pull keveon/$imageName  docker tag keveon/$imageName k8s.gcr.io/$imageName  docker rmi keveon/$imageNamedone
+```
+
+### 4 初始化安装K8S Master
+下载完成后，执行kubeadm init:
+
+`kubeadm init --kubernetes-version=v1.11.0 --pod-network-cidr=192.168.0.0/16`
+
+执行过程中可能会出现版本问题，此时自行按照版本提示使用`docker pull ...`获得相应镜像并改名即可
+
+
+上面的命令大约需要1分钟的过程，期间可以观察下tail -f /var/log/message日志文件的输出，掌握该配置过程和进度。上面最后一段的输出信息保存一份，后续添加工作节点还要用到。
+
+类似于
+```
+kubeadm join 10.211.55.10:6443 --token 1xuwcb.oijnat5tkla6r384 --discovery-token-ca-cert-hash sha256:bcbf083a3fab2422ae0615b421d71a2275f2a974746989e59672a100a071ba30
+```
+
+### 5.配置kubectl认证信息（Master节点操作）
+
+对于非root用户
+
+```
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+对于root用户
+
+```
+export KUBECONFIG=/etc/kubernetes/admin.conf
+```
+也可以直接放到~/.bash_profile
+ 
+```
+echo "export KUBECONFIG=/etc/kubernetes/admin.conf" >> ~/.bash_profile
+```
+### 6.安装网络组件
+
+这里我们使用Calico：
+
+```
+kubectl apply -f \
+https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml
+```
+然后使用`watch kubectl get pods --all-namespaces`检查coreDNS运行状态，如果为running则可以继续
+
+### 7.在本机运行pods
+执行
+`kubectl taint nodes --all node-role.kubernetes.io/master-`
+允许master上调度pods
+
+## 搭建新的NODE并join进集群
+### 准备
+首先安装新的虚拟机并安装CentOS，然后按照本文第一部分安装kubeadm和docker等组件
+
+### join
+将master init后输出的提示在新机器上执行
+`kubeadm join 10.211.55.10:6443 --token 1xuwcb.oijnat5tkla6r384 --discovery-token-ca-cert-hash sha256:bcbf083a3fab2422ae0615b421d71a2275f2a974746989e59672a100a071ba30`
+即可加入集群
+
+### 默认token的有效期为24小时，当过期之后，该token就不可用了。解决方法如下：
+
+重新生成新的token
+
+`kubeadm token create`
+
+`kubeadm token list`
+
+获取ca证书sha256编码hash值
+`openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'`
+
+节点加入集群
+`kubeadm join --token aa78f6.8b4cafc8ed26c34f --discovery-token-ca-cert-hash sha256:...`
+
+### 关闭node
+在master执行
+```
+kubectl drain <node name> --delete-local-data --force --ignore-daemonsets
+kubectl delete node <node name>
+```
+在该node执行
+`kubectl reset`
+
+即可关闭该node
