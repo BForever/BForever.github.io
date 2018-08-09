@@ -1,0 +1,17 @@
+<h1 id="无法下载golangorgxnet解决方法">无法下载golang.org/x/net解决方法</h1>
+<p>由于go的很多包都依赖了google官方的包，而google官方的包都在google服务器上，因为某些原因无法直接访问，在搜索了很多解决方案后，找到了最简单的一个方法：</p>
+
+<h3 id="1-找到对应包在github的地址">1. 找到对应包在github的地址</h3>
+<h3 id="2-go-get这个地址的包">2. go get这个地址的包</h3>
+<h3 id="3-在本地创建包的原地址的文件夹">3. 在本地创建包的原地址的文件夹</h3>
+<h3 id="4-将githubcom文件夹中的这个包转移的原地址文件夹中">4. 将github.com文件夹中的这个包转移的原地址文件夹中</h3>
+
+<p>具体到标题上的问题，我们需要首先获得该包在github上的地址</p>
+
+<p><code class="highlighter-rouge">github.com/golang/net</code></p>
+
+<p>因此，使用命令：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>go get github.com/golang/net
+</code></pre></div></div>
+<p>获得这个包，随后在<code class="highlighter-rouge">$GOPATH/src</code>中创建<code class="highlighter-rouge">golang.org/x/</code>文件夹，并将<code class="highlighter-rouge">github.com/golang/net</code>剪切到其中，这样我们就可以<code class="highlighter-rouge">import "golang.org/x/net"</code>了</p>
