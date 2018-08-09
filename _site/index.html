@@ -33,44 +33,30 @@
   
   <article class="post">
     <h1 class="post-title">
-      <a href="/2018/08/03/IFB%E4%B8%8A%E6%8C%82%E8%BD%BDNETEM/">
-        Ifb上挂载netem
+      <a href="/2018/08/09/%E6%97%A0%E6%B3%95%E4%B8%8B%E8%BD%BDgolang.org-x-net%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/">
+        无法下载golang.org X Net解决方法
       </a>
     </h1>
 
-    <time datetime="2018-08-03T00:00:00+08:00" class="post-date">03 Aug 2018</time>
+    <time datetime="2018-08-09T00:00:00+08:00" class="post-date">09 Aug 2018</time>
 
-    <h1 id="ifb上挂载netem">IFB上挂载NETEM</h1>
-<h3 id="建立虚拟网卡的ingress转发到ifb0每一个pod">建立虚拟网卡的ingress转发到ifb0（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calicoxxxxxxxxxxx ingress
-tc filter add dev calicoxxxxxxxxxxx parent ffff: protocol ip prio 10 u32 \
-&gt; match u32 0 0 flowid 1:1 \
-&gt; action mirred egress redirect dev ifb0
+    <h1 id="无法下载golangorgxnet解决方法">无法下载golang.org/x/net解决方法</h1>
+<p>由于go的很多包都依赖了google官方的包，而google官方的包都在google服务器上，因为某些原因无法直接访问，在搜索了很多解决方案后，找到了最简单的一个方法：</p>
+
+<h3 id="1-找到对应包在github的地址">1. 找到对应包在github的地址</h3>
+<h3 id="2-go-get这个地址的包">2. go get这个地址的包</h3>
+<h3 id="3-在本地创建包的原地址的文件夹">3. 在本地创建包的原地址的文件夹</h3>
+<h3 id="4-将githubcom文件夹中的这个包转移的原地址文件夹中">4. 将github.com文件夹中的这个包转移的原地址文件夹中</h3>
+
+<p>具体到标题上的问题，我们需要首先获得该包在github上的地址</p>
+
+<p><code class="highlighter-rouge">github.com/golang/net</code></p>
+
+<p>因此，使用命令：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>go get github.com/golang/net
 </code></pre></div></div>
-
-<h3 id="建立ifb0的根队列htb每一个node">建立ifb0的根队列htb（每一个Node）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb0 root handle 1: htb default 0
-</code></pre></div></div>
-
-<h3 id="为x号pod建立一个类1x每一个pod">为x号Pod建立一个类1:x（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev ifb0 parent 1: classid 1:x htb rate 100mbps
-</code></pre></div></div>
-
-<h3 id="为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod">为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev ifb0 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev tunl0 ingress
-
-tc filter add dev tunl0 parent ffff: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb1
-
-tc qdisc add dev ifb1 root handle 1: htb default 0
-
-tc class add dev ifb1 parent 1: classid 1:1 htb rate 100mbps
-
-tc filter add dev ifb1 protocol ip parent 1:0 prio 1 u32 match ip src 192.168.102.232 flowid 1:1
-tc qdisc add dev ifb1 parent 1:1 netem delay 100ms
-</code></pre></div></div>
+<p>获得这个包，随后在<code class="highlighter-rouge">$GOPATH/src</code>中创建<code class="highlighter-rouge">golang.org/x/</code>文件夹，并将<code class="highlighter-rouge">github.com/golang/net</code>剪切到其中，这样我们就可以<code class="highlighter-rouge">import "golang.org/x/net"</code>了</p>
 
   </article>
   
@@ -89,7 +75,7 @@ tc qdisc add dev ifb1 parent 1:1 netem delay 100ms
 
       <footer class="footer">
         <small>
-          &copy; <time datetime="2018-08-08T14:53:32+08:00">2018</time>. All rights reserved.
+          &copy; <time datetime="2018-08-09T15:45:23+08:00">2018</time>. All rights reserved.
         </small>
       </footer>
     </div>

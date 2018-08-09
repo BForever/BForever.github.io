@@ -1,9 +1,8 @@
 <h1 id="ifb上挂载netem">IFB上挂载NETEM</h1>
+<h2 id="转发虚拟网卡的ingress">转发虚拟网卡的ingress</h2>
 <h3 id="建立虚拟网卡的ingress转发到ifb0每一个pod">建立虚拟网卡的ingress转发到ifb0（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calicoxxxxxxxxxxx ingress
-tc filter add dev calicoxxxxxxxxxxx parent ffff: protocol ip prio 10 u32 \
-&gt; match u32 0 0 flowid 1:1 \
-&gt; action mirred egress redirect dev ifb0
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calixxxxxxxxxxx ingress
+tc filter add dev calixxxxxxxxxxx parent ffff: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0
 </code></pre></div></div>
 
 <h3 id="建立ifb0的根队列htb每一个node">建立ifb0的根队列htb（每一个Node）：</h3>
@@ -17,15 +16,37 @@ tc filter add dev calicoxxxxxxxxxxx parent ffff: protocol ip prio 10 u32 \
 <h3 id="为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod">为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：</h3>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev ifb0 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
 </code></pre></div></div>
+<h3 id="为每一个类建立一个netem队列x11每一个pod">为每一个类建立一个netem队列x+1:1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb0 parent 1:1 handle x+1: netem delay 100ms
+</code></pre></div></div>
+<h2 id="转发虚拟网卡的egress">转发虚拟网卡的egress</h2>
+<h3 id="为虚拟网卡的egress建立htb队列1每一个pod">为虚拟网卡的egress建立HTB队列1:（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calixxxxxxxxxxx root handle 1: htb default 1
+</code></pre></div></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev tunl0 ingress
+<h3 id="为htb建立子类11每一个pod">为HTB建立子类1:1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev calix parent 1: classid 1:1 htb rate 100mbps
+</code></pre></div></div>
 
-tc filter add dev tunl0 parent ffff: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb1
+<h3 id="为子类建立队列每一个pod">为子类建立队列（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calix parent 1:1 pfifo limit 1600
+</code></pre></div></div>
 
-tc qdisc add dev ifb1 root handle 1: htb default 0
+<h3 id="转发到ifb1每一个pod">转发到IFB1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev calix parent 1: proto ip prio 1 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb1
+</code></pre></div></div>
 
-tc class add dev ifb1 parent 1: classid 1:1 htb rate 100mbps
+<h3 id="建立ifb1的根队列htb每一个node">建立ifb1的根队列htb（每一个Node）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb1 root handle 1: htb default 0
+</code></pre></div></div>
 
-tc filter add dev ifb1 protocol ip parent 1:0 prio 1 u32 match ip src 192.168.102.232 flowid 1:1
-tc qdisc add dev ifb1 parent 1:1 netem delay 100ms
+<h3 id="为x号pod建立一个类1x每一个pod-1">为x号Pod建立一个类1:x（每一个Pod）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev ifb1 parent 1: classid 1:x htb rate 100mbps
+</code></pre></div></div>
+
+<h3 id="为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod-1">为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev ifb1 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
+</code></pre></div></div>
+<h3 id="为每一个类建立一个netem队列x11每一个pod-1">为每一个类建立一个netem队列x+1:1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb1 parent 1:1 handle x+1: netem delay 100ms
 </code></pre></div></div>

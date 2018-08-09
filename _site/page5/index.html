@@ -33,184 +33,74 @@
   
   <article class="post">
     <h1 class="post-title">
-      <a href="/2018/07/20/%E5%9C%A8CentOS7%E4%B8%8A%E6%90%AD%E5%BB%BAK8S/">
-        在centos7上搭建k8s
+      <a href="/2018/07/23/%E5%9C%A8K8S%E4%B8%8A%E8%B7%91%E4%B8%80%E4%B8%AAhelloworld/">
+        在k8s上跑一个helloworld
       </a>
     </h1>
 
-    <time datetime="2018-07-20T00:00:00+08:00" class="post-date">20 Jul 2018</time>
+    <time datetime="2018-07-23T00:00:00+08:00" class="post-date">23 Jul 2018</time>
 
-    <h1 id="在centos7上搭建k8s">在CentOS7上搭建K8S</h1>
-<h2 id="来源">来源</h2>
-<p>中文教程 <a href="http://blog.51cto.com/devingeng/2096495?from=singlemessage">http://blog.51cto.com/devingeng/2096495?from=singlemessage</a></p>
+    <h1 id="在k8s上跑一个helloworld">在K8S上跑一个helloworld</h1>
+<h2 id="建立docker镜像">建立docker镜像</h2>
+<p>为了方便起见，这里直接使用一个js网页作为应用，以此创建镜像</p>
+<h3 id="hello-world网页">hello world网页</h3>
+<p>创建server.js，输入以下代码创建helloworld网页：</p>
 
-<p>官方文档 <a href="https://kubernetes.io/docs/setup/independent/install-kubeadm/">https://kubernetes.io/docs/setup/independent/install-kubeadm/</a></p>
-<h2 id="准备">准备</h2>
-<h3 id="1-centos-7">1 centOS 7</h3>
-<h3 id="2-以root登陆建议">2 以root登陆（建议）</h3>
-<h3 id="3-关闭防火墙">3 关闭防火墙</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var http = require('http');
+
+var handleRequest = function(request, response) {
+  console.log('Received request for URL: ' + request.url);
+  response.writeHead(200);
+  response.end('Hello World!');
+};
+var www = http.createServer(handleRequest);
+www.listen(8080);
+</code></pre></div></div>
+
+<h3 id="dockerfile">Dockerfile</h3>
+<p>创建Dockerfile文件，配置镜像：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM node:6.9.2
+EXPOSE 8080
+COPY server.js .
+CMD node server.js
+</code></pre></div></div>
+<p>其中，FROM是从官方镜像库取得node的镜像，EXPOSE表示暴露本容器的8080端口，COPY将server.js加入容器，CMD为容器中执行的命令</p>
 
 <blockquote>
-  <p>关闭firewall，iptables：
-<code class="highlighter-rouge">systemctl stop firewalld.service</code> #停止firewall
-<code class="highlighter-rouge">systemctl disable firewalld.service</code> #禁止firewall开机启动</p>
+  <p>更详细的Dockerfile写法见官方文档</p>
 </blockquote>
 
-<blockquote>
-  <p><code class="highlighter-rouge">firewall-cmd --state</code> #查看默认防火墙状态（关闭后显示not running，开启后显示running）</p>
-</blockquote>
+<h3 id="创建镜像">创建镜像</h3>
+<p>配置好Dockerfile后，就可以使用docker的build命令根据Dockerfile的内容创建一个镜像：
+<code class="highlighter-rouge">docker build -t hello-node:v1 .</code>
+这里注意不要遗漏最后的<code class="highlighter-rouge">.</code></p>
 
-<h3 id="4-关闭selinux">4 关闭SElinux</h3>
-<p>暂时关闭：
-<code class="highlighter-rouge">setenforce 0</code>
-永久关闭：
-<code class="highlighter-rouge">vim /etc/selinux/config</code>打开selinux配置文件</p>
+<h2 id="在kubernetes上以该镜像创建一个pod">在Kubernetes上以该镜像创建一个POD</h2>
+<p>在K8S集群配置完毕后，执行</p>
 
-<p>找到SELINUX=参数</p>
+<p><code class="highlighter-rouge">kubectl run hello-node --image=hello-node:v1 --port=8080 --image-pull-policy=Never</code></p>
 
-<p>参数可选（enforcing、permissive、disabled）</p>
+<p>即可在K8S上建立一个新的运行刚刚建立的镜像的POD</p>
 
-<p>disabled即为关闭SElinux</p>
+<p>但是此时由于POD默认不暴露在外部，因此我们无法观察到node的输出，为此需要创建一个service将该POD的端口暴露出来</p>
 
-<h3 id="5-关闭swap">5 关闭swap</h3>
+<h2 id="访问该pod">访问该POD</h2>
+<h3 id="kubernetes-service">Kubernetes Service</h3>
+<p>Service有几个种类，默认的是cluster-ip，即只能通过pod在集群内部的IP地址进行对service的访问</p>
 
-<p><code class="highlighter-rouge">swapoff -a</code></p>
+<p>第二种是nodeport，即在每一个Node上暴露出一个端口：nodePort，外部网络可以通过（任一Node）[NodeIP]:[NodePort]访问到后端的Service。</p>
 
-<h3 id="6-配置系统内核参数使流过网桥的流量也进入iptablesnetfilter框架中开启ipv4的forwarding">6 配置系统内核参数使流过网桥的流量也进入iptables/netfilter框架中，开启ipv4的forwarding</h3>
+<p>第三种是loadbalancer，请求底层云平台创建一个负载均衡器，将每个Node作为后端，进行服务分发。该模式需要底层云平台（例如GCE）支持</p>
 
-<blockquote>
-  <p>在/etc/sysctl.conf中添加以下配置：</p>
+<p>最简单的就是直接开启一个默认的clusterip的service，在master上直接通过集群内部IP访问helloworld：</p>
 
-  <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> net.bridge.bridge-nf-call-iptables = 1
- net.bridge.bridge-nf-call-ip6tables = 1 
- net.ipv4.ip_forward=1
-</code></pre></div>  </div>
-  <p>并执行<code class="highlighter-rouge">sysctl -p</code></p>
-</blockquote>
+<p><code class="highlighter-rouge">kubectl expose deployment hello-node --port=8080 --target-port=8080</code></p>
 
-<h3 id="7-配置阿里云镜像">7 配置阿里云镜像</h3>
+<p>其他方式比如NodePort可以通过<code class="highlighter-rouge">--type=NodePort</code>参数指定</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat &lt;&lt;EOF &gt; /etc/yum.repos.d/kubernetes.repo
-[kubernetes]
-name=Kubernetes
-baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
-enabled=1
-gpgcheck=0
-EOF
-yum -y install epel-release
-yum clean all
-yum makecache
-</code></pre></div></div>
-
-<h2 id="安装相关工具">安装相关工具</h2>
-<blockquote>
-  <p>以下内容于51CTO博客作者Devin的原创作品整理而来，如需转载，请注明出处</p>
-</blockquote>
-
-<h3 id="1-安装docker以及kubeadm相关工具">1 安装docker以及kubeadm相关工具</h3>
-<p><code class="highlighter-rouge">yum -y install docker kubelet kubeadm kubectl</code></p>
-
-<h3 id="2-启动docker以及kubeadm服务">2 启动docker以及kubeadm服务</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl enable docker &amp;&amp; systemctl start docker
-systemctl enable kubelet &amp;&amp; systemctl start kubelet
-</code></pre></div></div>
-
-<h3 id="3-下载k8s相关镜像">3 下载K8S相关镜像</h3>
-<p>因为无法直接访问gcr.io下载镜像，所以需要配置一个国内的容器镜像加速器:</p>
-
-<p>登录 https://cr.console.aliyun.com/</p>
-
-<p>在页面中找到并点击镜像加速按钮，即可看到属于自己的专属加速链接，选择Centos版本后即可看到配置方法。</p>
-
-<p>解决完加速器的问题之后，开始下载k8s相关镜像，下载后将镜像名改为k8s.gcr.io/开头的名字，以便kubeadm识别使用:(注意将版本号替换为当前安装的版本）</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">#!/bin/bash</span>
-<span class="nv">images</span><span class="o">=(</span>kube-proxy-amd64:v1.11.0 kube-scheduler-amd64:v1.11.0 kube-controller-manager-amd64:v1.11.0 kube-apiserver-amd64:v1.11.0
-etcd-amd64:3.2.18 pause-amd64:3.1 kubernetes-dashboard-amd64:v1.8.3 k8s-dns-sidecar-amd64:1.14.8 k8s-dns-kube-dns-amd64:1.14.8
-k8s-dns-dnsmasq-nanny-amd64:1.14.8 coredns:1.1.3<span class="o">)</span>
-<span class="k">for </span>imageName <span class="k">in</span> <span class="k">${</span><span class="nv">images</span><span class="p">[@]</span><span class="k">}</span> <span class="p">;</span> <span class="k">do
-  </span>docker pull keveon/<span class="nv">$imageName</span>
-  docker tag keveon/<span class="nv">$imageName</span> k8s.gcr.io/<span class="nv">$imageName</span>
-  docker rmi keveon/<span class="nv">$imageName</span>
-<span class="k">done</span>
-</code></pre></div></div>
-
-<h3 id="4-初始化安装k8s-master">4 初始化安装K8S Master</h3>
-<p>下载完成后，执行kubeadm init:</p>
-
-<p><code class="highlighter-rouge">kubeadm init --kubernetes-version=v1.11.0 --pod-network-cidr=192.168.0.0/16</code></p>
-
-<p>执行过程中可能会出现版本问题，此时自行按照版本提示使用<code class="highlighter-rouge">docker pull ...</code>获得相应镜像并改名即可</p>
-
-<p>上面的命令大约需要1分钟的过程，期间可以观察下tail -f /var/log/message日志文件的输出，掌握该配置过程和进度。上面最后一段的输出信息保存一份，后续添加工作节点还要用到。</p>
-
-<p>类似于</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kubeadm join 10.211.55.10:6443 --token 1xuwcb.oijnat5tkla6r384 --discovery-token-ca-cert-hash sha256:bcbf083a3fab2422ae0615b421d71a2275f2a974746989e59672a100a071ba30
-</code></pre></div></div>
-
-<h3 id="5配置kubectl认证信息master节点操作">5.配置kubectl认证信息（Master节点操作）</h3>
-
-<p>对于非root用户</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
-</code></pre></div></div>
-
-<p>对于root用户</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>export KUBECONFIG=/etc/kubernetes/admin.conf
-</code></pre></div></div>
-<p>也可以直接放到~/.bash_profile</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>echo "export KUBECONFIG=/etc/kubernetes/admin.conf" &gt;&gt; ~/.bash_profile
-</code></pre></div></div>
-<h3 id="6安装网络组件">6.安装网络组件</h3>
-
-<p>这里我们使用Calico：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kubectl apply -f \
-https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubeadm/1.7/calico.yaml
-</code></pre></div></div>
-<p>然后使用<code class="highlighter-rouge">watch kubectl get pods --all-namespaces</code>检查coreDNS运行状态，如果为running则可以继续</p>
-
-<h3 id="7在本机运行pods">7.在本机运行pods</h3>
-<p>执行
-<code class="highlighter-rouge">kubectl taint nodes --all node-role.kubernetes.io/master-</code>
-允许master上调度pods</p>
-
-<h2 id="搭建新的node并join进集群">搭建新的NODE并join进集群</h2>
-<h3 id="准备-1">准备</h3>
-<p>首先安装新的虚拟机并安装CentOS，然后按照本文第一部分安装kubeadm和docker等组件</p>
-
-<h3 id="join">join</h3>
-<p>将master init后输出的提示在新机器上执行
-<code class="highlighter-rouge">kubeadm join 10.211.55.10:6443 --token 1xuwcb.oijnat5tkla6r384 --discovery-token-ca-cert-hash sha256:bcbf083a3fab2422ae0615b421d71a2275f2a974746989e59672a100a071ba30</code>
-即可加入集群</p>
-
-<h3 id="默认token的有效期为24小时当过期之后该token就不可用了解决方法如下">默认token的有效期为24小时，当过期之后，该token就不可用了。解决方法如下：</h3>
-
-<p>重新生成新的token</p>
-
-<p><code class="highlighter-rouge">kubeadm token create</code></p>
-
-<p><code class="highlighter-rouge">kubeadm token list</code></p>
-
-<p>获取ca证书sha256编码hash值
-<code class="highlighter-rouge">openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2&gt;/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'</code></p>
-
-<p>节点加入集群
-<code class="highlighter-rouge">kubeadm join --token aa78f6.8b4cafc8ed26c34f --discovery-token-ca-cert-hash sha256:...</code></p>
-
-<h3 id="关闭node">关闭node</h3>
-<p>在master执行</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>kubectl drain &lt;node name&gt; --delete-local-data --force --ignore-daemonsets
-kubectl delete node &lt;node name&gt;
-</code></pre></div></div>
-<p>在该node执行
-<code class="highlighter-rouge">kubectl reset</code></p>
-
-<p>即可关闭该node</p>
+<h3 id="进行访问">进行访问</h3>
+<p>在创建好service之后，就可以使用<code class="highlighter-rouge">kubectl get service</code>查看当前运行的service，其中可以看到hello-node的ClusterIP，在浏览器中访问该IP：8080即可看到hello world！</p>
 
   </article>
   
@@ -218,7 +108,7 @@ kubectl delete node &lt;node name&gt;
 
 <div class="pagination">
   
-    <span class="pagination-item older">Older</span>
+    <a class="pagination-item older" href="/page6">Older</a>
   
   
     <a class="pagination-item newer" href="/page4">Newer</a>
@@ -229,7 +119,7 @@ kubectl delete node &lt;node name&gt;
 
       <footer class="footer">
         <small>
-          &copy; <time datetime="2018-08-08T14:53:32+08:00">2018</time>. All rights reserved.
+          &copy; <time datetime="2018-08-09T15:45:23+08:00">2018</time>. All rights reserved.
         </small>
       </footer>
     </div>

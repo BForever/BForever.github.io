@@ -4,7 +4,7 @@
  <title>BForever</title>
  <link href="http://localhost:4000/atom.xml" rel="self"/>
  <link href="http://localhost:4000/"/>
- <updated>2018-08-08T14:53:32+08:00</updated>
+ <updated>2018-08-09T15:45:23+08:00</updated>
  <id>http://localhost:4000</id>
  <author>
    <name>FanHongchang</name>
@@ -13,16 +13,40 @@
 
  
  <entry>
+   <title>无法下载golang.org X Net解决方法</title>
+   <link href="http://localhost:4000/2018/08/09/%E6%97%A0%E6%B3%95%E4%B8%8B%E8%BD%BDgolang.org-x-net%E8%A7%A3%E5%86%B3%E6%96%B9%E6%B3%95/"/>
+   <updated>2018-08-09T00:00:00+08:00</updated>
+   <id>http://localhost:4000/2018/08/09/无法下载golang.org-x-net解决方法</id>
+   <content type="html">&lt;h1 id=&quot;无法下载golangorgxnet解决方法&quot;&gt;无法下载golang.org/x/net解决方法&lt;/h1&gt;
+&lt;p&gt;由于go的很多包都依赖了google官方的包，而google官方的包都在google服务器上，因为某些原因无法直接访问，在搜索了很多解决方案后，找到了最简单的一个方法：&lt;/p&gt;
+
+&lt;h3 id=&quot;1-找到对应包在github的地址&quot;&gt;1. 找到对应包在github的地址&lt;/h3&gt;
+&lt;h3 id=&quot;2-go-get这个地址的包&quot;&gt;2. go get这个地址的包&lt;/h3&gt;
+&lt;h3 id=&quot;3-在本地创建包的原地址的文件夹&quot;&gt;3. 在本地创建包的原地址的文件夹&lt;/h3&gt;
+&lt;h3 id=&quot;4-将githubcom文件夹中的这个包转移的原地址文件夹中&quot;&gt;4. 将github.com文件夹中的这个包转移的原地址文件夹中&lt;/h3&gt;
+
+&lt;p&gt;具体到标题上的问题，我们需要首先获得该包在github上的地址&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;github.com/golang/net&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;因此，使用命令：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;go get github.com/golang/net
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;p&gt;获得这个包，随后在&lt;code class=&quot;highlighter-rouge&quot;&gt;$GOPATH/src&lt;/code&gt;中创建&lt;code class=&quot;highlighter-rouge&quot;&gt;golang.org/x/&lt;/code&gt;文件夹，并将&lt;code class=&quot;highlighter-rouge&quot;&gt;github.com/golang/net&lt;/code&gt;剪切到其中，这样我们就可以&lt;code class=&quot;highlighter-rouge&quot;&gt;import &quot;golang.org/x/net&quot;&lt;/code&gt;了&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
    <title>Ifb上挂载netem</title>
    <link href="http://localhost:4000/2018/08/03/IFB%E4%B8%8A%E6%8C%82%E8%BD%BDNETEM/"/>
    <updated>2018-08-03T00:00:00+08:00</updated>
    <id>http://localhost:4000/2018/08/03/IFB上挂载NETEM</id>
    <content type="html">&lt;h1 id=&quot;ifb上挂载netem&quot;&gt;IFB上挂载NETEM&lt;/h1&gt;
+&lt;h2 id=&quot;转发虚拟网卡的ingress&quot;&gt;转发虚拟网卡的ingress&lt;/h2&gt;
 &lt;h3 id=&quot;建立虚拟网卡的ingress转发到ifb0每一个pod&quot;&gt;建立虚拟网卡的ingress转发到ifb0（每一个Pod）：&lt;/h3&gt;
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev calicoxxxxxxxxxxx ingress
-tc filter add dev calicoxxxxxxxxxxx parent ffff: protocol ip prio 10 u32 \
-&amp;gt; match u32 0 0 flowid 1:1 \
-&amp;gt; action mirred egress redirect dev ifb0
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev calixxxxxxxxxxx ingress
+tc filter add dev calixxxxxxxxxxx parent ffff: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h3 id=&quot;建立ifb0的根队列htb每一个node&quot;&gt;建立ifb0的根队列htb（每一个Node）：&lt;/h3&gt;
@@ -36,17 +60,39 @@ tc filter add dev calicoxxxxxxxxxxx parent ffff: protocol ip prio 10 u32 \
 &lt;h3 id=&quot;为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod&quot;&gt;为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：&lt;/h3&gt;
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc filter add dev ifb0 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;为每一个类建立一个netem队列x11每一个pod&quot;&gt;为每一个类建立一个netem队列x+1:1（每一个Pod）&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev ifb0 parent 1:1 handle x+1: netem delay 100ms
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h2 id=&quot;转发虚拟网卡的egress&quot;&gt;转发虚拟网卡的egress&lt;/h2&gt;
+&lt;h3 id=&quot;为虚拟网卡的egress建立htb队列1每一个pod&quot;&gt;为虚拟网卡的egress建立HTB队列1:（每一个Pod）&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev calixxxxxxxxxxx root handle 1: htb default 1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev tunl0 ingress
+&lt;h3 id=&quot;为htb建立子类11每一个pod&quot;&gt;为HTB建立子类1:1（每一个Pod）&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc class add dev calix parent 1: classid 1:1 htb rate 100mbps
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-tc filter add dev tunl0 parent ffff: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb1
+&lt;h3 id=&quot;为子类建立队列每一个pod&quot;&gt;为子类建立队列（每一个Pod）&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev calix parent 1:1 pfifo limit 1600
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-tc qdisc add dev ifb1 root handle 1: htb default 0
+&lt;h3 id=&quot;转发到ifb1每一个pod&quot;&gt;转发到IFB1（每一个Pod）&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc filter add dev calix parent 1: proto ip prio 1 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-tc class add dev ifb1 parent 1: classid 1:1 htb rate 100mbps
+&lt;h3 id=&quot;建立ifb1的根队列htb每一个node&quot;&gt;建立ifb1的根队列htb（每一个Node）：&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev ifb1 root handle 1: htb default 0
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-tc filter add dev ifb1 protocol ip parent 1:0 prio 1 u32 match ip src 192.168.102.232 flowid 1:1
-tc qdisc add dev ifb1 parent 1:1 netem delay 100ms
+&lt;h3 id=&quot;为x号pod建立一个类1x每一个pod-1&quot;&gt;为x号Pod建立一个类1:x（每一个Pod）：&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc class add dev ifb1 parent 1: classid 1:x htb rate 100mbps
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod-1&quot;&gt;为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc filter add dev ifb1 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;h3 id=&quot;为每一个类建立一个netem队列x11每一个pod-1&quot;&gt;为每一个类建立一个netem队列x+1:1（每一个Pod）&lt;/h3&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;tc qdisc add dev ifb1 parent 1:1 handle x+1: netem delay 100ms
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 </content>
  </entry>

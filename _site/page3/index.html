@@ -33,92 +33,139 @@
   
   <article class="post">
     <h1 class="post-title">
-      <a href="/2018/07/24/%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E5%8C%85%E5%90%ABTC%E7%9A%84Alpine%E9%95%9C%E5%83%8F/">
-        创建一个包含tc的alpine镜像
+      <a href="/2018/08/02/IFB/">
+        Ifb
       </a>
     </h1>
 
-    <time datetime="2018-07-24T00:00:00+08:00" class="post-date">24 Jul 2018</time>
+    <time datetime="2018-08-02T00:00:00+08:00" class="post-date">02 Aug 2018</time>
 
-    <h1 id="创建一个包含tc的alpine镜像">创建一个包含TC的Alpine镜像</h1>
+    <h1 id="ifb">IFB</h1>
+<p>IFB（中介功能块设备）是IMQ（中介队列设备）的继任者，IMQ从来没有被集成过，IFB拥有IMQ的优点，在SMP上更加清晰明了，并且代码量缩减了非常多，旧的中介设备功能仍然保留，但在你使用actions时你需要新的</p>
 
-<h2 id="镜像的创建">镜像的创建</h2>
-
+<h2 id="目录">目录</h2>
 <ol>
-  <li>更换镜像至ustc（为了测试时的速度）</li>
-  <li>安装musl-dev make gcc linux-headers bison flex以使TC可以编译</li>
-  <li>拷贝进TC的源代码</li>
-  <li>进入源代码文件夹进行编译</li>
-  <li>运行top（或任何不自动退出的程序）以便exec进入容器</li>
+  <li>IFB使用场景</li>
+  <li>典型应用</li>
+  <li>跑一个小测试</li>
+  <li>IFB样例</li>
+  <li>IFB的依赖</li>
+  <li>IFB样例</li>
 </ol>
 
-<p>Dockerfile如下：</p>
+<h2 id="ifb使用场景">IFB使用场景</h2>
+<p>据我所知，如下场景是人们使用IMQ的理由：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM alpine
+<ul>
+  <li>队列/策略是针对单个网卡而不是应用到整个系统的，而IMQ允许多个设备共享队列/策略</li>
+  <li>允许入境流量被整流而不仅仅是被丢弃。我不知道有什么研究能说明丢包比整流更差，如果有我会十分感兴趣。</li>
+  <li>思科的<a href="http://www.cisco.com/c/en/us/support/docs/quality-of-service-qos/qos-policing/19645-policevsshape.html#selectioncriteria">Comparing Traffic Policing and Traffic Shaping for Bandwidth Limiting</a>表明整流（排队）比策略（限流）更好，因为策略会丢弃多余的包，限制TCP的窗口大小并且减少基于TCP的流的输出速率</li>
+  <li>现实中几乎<a href="http://www.caida.org/data/realtime/passive/?monitor=equinix-chicago-dirA">所有的互联网</a>流量都是基于TCP的</li>
+  <li>非常有意思的应用：如果你在提供P2P服务，你可能会想要优先处理本地流量而不是其他使用你的系统上/下载的流量。所以基于状态的QoS是一种解决方案，人们用在本地流量入口之前挂载IMQ的方式实现了它。我认为这是Linux上非常有特点的应用（不仅仅是IMQ）</li>
+</ul>
 
-RUN rm /etc/apk/repositories
-RUN echo -e "http://mirrors.ustc.edu.cn/alpine/v3.8/main\nhttp://mirrors.ustc.edu.cn/alpine/v3.8/community" &gt; /etc/apk/repositories
+<p>不过我不会再使用netfilter hooks的方式实现这个，我也不会认为这值的我修改IFB获取三层网络的信息来实现它</p>
 
-RUN set -ex \
-        &amp;&amp; apk update &amp;&amp; apk add --no-cache --virtual .build-deps \
-                musl-dev \
-                make \
-                gcc \
-                linux-headers \
-                bison \
-                flex
+<p>替代的方案是使用一个跟踪连接的action。这个action会选择性的在入境数据包上查询/创建连接跟踪状态。数据包因此可以根据发生了什么来被重定向到IFB。如果我们发现它们是已知的状态我们就可以把它发送到不同于还没有状态的数据包的队列里。这取决于管理员制定的规则。</p>
 
-ADD iproute /code/iproute
-RUN cd code/iproute &amp;&amp; make
-CMD top
+<p>现在这个功能还不存在，我决定不在补丁上release它，如果有强烈要求我会增加这个特性</p>
+
+<p>你现在可以用IFB做的是actions</p>
+
+<p>假设你在来自192.168.200.200/32上的数据包上限流到100kbps</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev eth0 parent 1: protocol ip prio 10 u32 \
+ match ip src 192.168.200.200/32 flowid 1:2 \
+ action police rate 100kbit burst 90k drop
 </code></pre></div></div>
 
-<h2 id="部署用yaml的设置">部署用yaml的设置</h2>
+<p>如果你在eth0上运行tcpdump，你会看到所有来自于192.168.200.200/32的数据包是否被丢弃。扩展这条规则来只观察这些包：</p>
 
-<h3 id="tc内核通信权限设置">TC内核通信权限设置</h3>
-<p>由于TC与内核通信并更改网络设置，需要提高容器权限，这需要在YAML文件中进行设置：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spec:
-  containers:
-    securityContext:
-      privileged: true
-</code></pre></div></div>
-<p>这样容器内的TC才有权限通过netlink与内核进行通信</p>
-
-<h3 id="网络设置">网络设置</h3>
-
-<p>TC所在的POD需要能够设置该Node的所有网卡，因此需要设置为hostNetwork网络，另外需要设置DNS以使Pod能以POD的身份访问service</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev eth0 parent 1: protocol ip prio 10 u32 \
+ match ip src 192.168.200.200/32 flowid 1:2 \
+ action police rate 10kbit burst 90k drop \
+ action mirred egress mirror dev ifb0
 </code></pre></div></div>
 
-<p>最后的部署用的YAML如下：</p>
+<p>现在在ifb0上开启tcpdump就可以只观察这些包：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: test-deployment
-spec:
-  selector:
-    matchLabels:
-      app: test
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: test
-    spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
-      containers:
-      - name: test
-        image: foo
-        imagePullPolicy: Never
-        securityContext:
-          privileged: true
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tcpdump -n -i ifb0 -x -e -t
 </code></pre></div></div>
+
+<p>这是一个非常好的debug和log的接口</p>
+
+<p>如果你用重定向代替镜像，这些包会进入黑洞再也无法出来，这个重定向的行为会在新的补丁上被修改（但是镜像没有问题）</p>
+
+<h2 id="典型应用">典型应用</h2>
+<p>你可以使用新的补丁来实现以前用IMQ实现的功能</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>export TC="/sbin/tc"
+$TC qdisc add dev ifb0 root handle 1: prio 
+$TC qdisc add dev ifb0 parent 1:1 handle 10: sfq
+$TC qdisc add dev ifb0 parent 1:2 handle 20: tbf rate 20kbit buffer 1600 limit 3000
+$TC qdisc add dev ifb0 parent 1:3 handle 30: sfq                                
+$TC filter add dev ifb0 protocol ip pref 1 parent 1: handle 1 fw classid 1:1
+$TC filter add dev ifb0 protocol ip pref 2 parent 1: handle 2 fw classid 1:2
+ifconfig ifb0 up
+$TC qdisc add dev eth0 ingress
+# redirect all IP packets arriving in eth0 to ifb0 
+# use mark 1 --&gt; puts them onto class 1:1
+$TC filter add dev eth0 parent ffff: protocol ip prio 10 u32 \
+  match u32 0 0 flowid 1:1 \
+  action ipt -j MARK --set-mark 1 \
+  action mirred egress redirect dev ifb0
+</code></pre></div></div>
+
+<h2 id="跑一个小测试">跑一个小测试</h2>
+<p>从另一台机器ping过来，这样你可以获得入境流量：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[root@jzny action-tests]# ping 10.22
+PING 10.22 (10.0.0.22): 56 data bytes
+64 bytes from 10.0.0.22: icmp_seq=0 ttl=64 time=2.8 ms
+64 bytes from 10.0.0.22: icmp_seq=1 ttl=64 time=0.6 ms
+64 bytes from 10.0.0.22: icmp_seq=2 ttl=64 time=0.6 ms
+--- 10.22 ping statistics ---
+3 packets transmitted, 3 packets received, 0% packet loss
+round-trip min/avg/max = 0.6/1.3/2.8 ms
+[root@jzny action-tests]#
+</code></pre></div></div>
+
+<p>现在看一下stats：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[root@jmandrake]:~# $TC -s filter show parent ffff: dev eth0
+filter protocol ip pref 10 u32 
+filter protocol ip pref 10 u32 fh 800: ht divisor 1 
+filter protocol ip pref 10 u32 fh 800::800 order 2048 key ht 800 bkt 0 flowid 1:1 
+  match 00000000/00000000 at 0
+        action order 1: tablename: mangle  hook: NF_IP_PRE_ROUTING 
+        target MARK set 0x1  
+        index 1 ref 1 bind 1 installed 4195sec  used 27sec 
+         Sent 252 bytes 3 pkts (dropped 0, overlimits 0) 
+        action order 2: mirred (Egress Redirect to device ifb0) stolen
+        index 1 ref 1 bind 1 installed 165 sec used 27 sec
+         Sent 252 bytes 3 pkts (dropped 0, overlimits 0) 
+[root@jmandrake]:~# $TC -s qdisc
+qdisc sfq 30: dev ifb0 limit 128p quantum 1514b 
+ Sent 0 bytes 0 pkts (dropped 0, overlimits 0) 
+qdisc tbf 20: dev ifb0 rate 20Kbit burst 1575b lat 2147.5s 
+ Sent 210 bytes 3 pkts (dropped 0, overlimits 0) 
+qdisc sfq 10: dev ifb0 limit 128p quantum 1514b 
+ Sent 294 bytes 3 pkts (dropped 0, overlimits 0) 
+qdisc prio 1: dev ifb0 bands 3 priomap  1 2 2 2 1 2 0 0 1 1 1 1 1 1 1 1
+ Sent 504 bytes 6 pkts (dropped 0, overlimits 0) 
+qdisc ingress ffff: dev eth0 ---------------- 
+ Sent 308 bytes 5 pkts (dropped 0, overlimits 0) 
+[root@jmandrake]:~# ifconfig ifb0
+ifb0    Link encap:Ethernet  HWaddr 00:00:00:00:00:00  
+          inet6 addr: fe80::200:ff:fe00:0/64 Scope:Link
+           UP BROADCAST RUNNING NOARP  MTU:1500  Metric:1
+           RX packets:6 errors:0 dropped:3 overruns:0 frame:0
+           TX packets:3 errors:0 dropped:0 overruns:0 carrier:0
+           collisions:0 txqueuelen:32 
+           RX bytes:504 (504.0 b)  TX bytes:252 (252.0 b)
+</code></pre></div></div>
+
+<p>伪设备（指IFB）仍然表现得像以前一样</p>
 
 
   </article>
@@ -138,7 +185,7 @@ spec:
 
       <footer class="footer">
         <small>
-          &copy; <time datetime="2018-08-08T14:53:32+08:00">2018</time>. All rights reserved.
+          &copy; <time datetime="2018-08-09T15:45:23+08:00">2018</time>. All rights reserved.
         </small>
       </footer>
     </div>
