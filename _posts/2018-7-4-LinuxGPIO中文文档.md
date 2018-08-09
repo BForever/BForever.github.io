@@ -216,52 +216,52 @@ void gpiod_set_value_cansleep(struct gpio_desc * desc，int value)
     <th>物理线路</th>
   </tr>
   <tr>
-    <td>gpiod\_set\_raw\_value(desc, 0);</td>
+    <td>gpiod_set_raw_value(desc, 0);</td>
     <td>-</td>
     <td>低电平</td>
   </tr>
   <tr>
-    <td>gpiod\_set\_raw\_value(desc, 0);</td>
+    <td>gpiod_set_raw_value(desc, 0);</td>
     <td>-</td>
     <td>高电平</td>
   </tr>
   <tr>
-    <td>gpiod\_set\_value(desc, 0);</td>
+    <td>gpiod_set_value(desc, 0);</td>
     <td>默认（高电平有效）</td>
     <td>低电平</td>
   </tr>
   <tr>
-    <td>gpiod\_set\_value(desc, 1);</td>
+    <td>gpiod_set_value(desc, 1);</td>
     <td>默认（高电平有效）</td>
     <td>高电平</td>
   </tr>
  <tr>
-    <td>gpiod\_set\_value(desc, 0);</td>
+    <td>gpiod_set_value(desc, 0);</td>
     <td>低电平有效</td>
     <td>高电平</td>
   </tr>
   <tr>
-    <td>gpiod\_set\_value(desc, 1);</td>
+    <td>gpiod_set_value(desc, 1);</td>
     <td>低电平有效</td>
     <td>低电平</td>
   </tr>
 <tr>
-    <td>gpiod\_set\_value(desc, 0);</td>
+    <td>gpiod_set_value(desc, 0);</td>
     <td>开漏</td>
     <td>低电平</td>
   </tr>
   <tr>
-    <td>gpiod\_set\_value(desc, 1);</td>
+    <td>gpiod_set_value(desc, 1);</td>
     <td>开漏</td>
     <td>高阻态</td>
   </tr>
 <tr>
-    <td>gpiod\_set\_value(desc, 0);</td>
+    <td>gpiod_set_value(desc, 0);</td>
     <td>开漏</td>
     <td>高阻态</td>
   </tr>
   <tr>
-    <td>gpiod\_set\_value(desc, 1);</td>
+    <td>gpiod_set_value(desc, 1);</td>
     <td>开漏</td>
     <td>高电平</td>
   </tr>
