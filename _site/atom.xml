@@ -4,7 +4,7 @@
  <title>BForever</title>
  <link href="http://localhost:4000/atom.xml" rel="self"/>
  <link href="http://localhost:4000/"/>
- <updated>2018-08-10T15:12:28+08:00</updated>
+ <updated>2018-08-10T16:38:04+08:00</updated>
  <id>http://localhost:4000</id>
  <author>
    <name>FanHongchang</name>
@@ -22,15 +22,25 @@
 
 &lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
 
+&lt;hr /&gt;
+
 &lt;ul&gt;
   &lt;li&gt;URL&lt;/li&gt;
+  &lt;li&gt;请求Body(可选)（URL）&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;返回结果(StatusCode+Body)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
 
 &lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;返回状态码：200&lt;/li&gt;
-  &lt;li&gt;返回结果匹配&lt;/li&gt;
+  &lt;li&gt;正确返回结果&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;h2 id=&quot;post&quot;&gt;POST&lt;/h2&gt;
@@ -38,14 +48,23 @@
 
 &lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
 
+&lt;hr /&gt;
+
 &lt;ul&gt;
   &lt;li&gt;URL&lt;/li&gt;
-  &lt;li&gt;正确body&lt;/li&gt;
-  &lt;li&gt;错误body&lt;/li&gt;
-  &lt;li&gt;对应GET的URL&lt;/li&gt;
-  &lt;li&gt;对应GET的资源创建正确返回结果&lt;/li&gt;
-  &lt;li&gt;对应GET的资源创建失败返回结果&lt;/li&gt;
+  &lt;li&gt;正确请求（Body）&lt;/li&gt;
+  &lt;li&gt;错误请求（Body）&lt;/li&gt;
+  &lt;li&gt;对应GET（URL+Body）&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;对应GET的资源创建正确返回结果（StatusCode+Body）&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建失败返回结果（StatusCode+Body）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
 
 &lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
 
@@ -60,18 +79,29 @@
 
 &lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
 
+&lt;hr /&gt;
+
 &lt;ul&gt;
   &lt;li&gt;URL&lt;/li&gt;
-  &lt;li&gt;body&lt;/li&gt;
-  &lt;li&gt;对应GET的URL&lt;/li&gt;
-  &lt;li&gt;对应GET的资源创建正确返回结果&lt;/li&gt;
-  &lt;li&gt;对应GET的资源创建失败返回结果&lt;/li&gt;
+  &lt;li&gt;正确请求（Body）&lt;/li&gt;
+  &lt;li&gt;错误请求（Body）&lt;/li&gt;
+  &lt;li&gt;对应GET（URL+Body）&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;参数正确的状态码（StatusCode）&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建正确返回结果（StatusCode+Body）&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建失败返回结果（StatusCode+Body）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
 
 &lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;参数正确则返回状态码：200&lt;/li&gt;
+  &lt;li&gt;参数正确则返回状态码：2xx&lt;/li&gt;
   &lt;li&gt;使用对应GET确认资源已创建/更新&lt;/li&gt;
   &lt;li&gt;多次相同测试执行结果相同&lt;/li&gt;
   &lt;li&gt;参数错误则返回错误并且资源没有创建/更新&lt;/li&gt;
@@ -82,10 +112,23 @@
 
 &lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
 
+&lt;hr /&gt;
+
 &lt;ul&gt;
   &lt;li&gt;URL&lt;/li&gt;
-  &lt;li&gt;请求体(body)&lt;/li&gt;
+  &lt;li&gt;请求体(Body)&lt;/li&gt;
+  &lt;li&gt;对应GET（URL+Body）&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;参数正确的状态码（StatusCode）&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建正确返回结果（StatusCode+Body）&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建失败返回结果（StatusCode+Body）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
 
 &lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
 
@@ -100,11 +143,24 @@
 
 &lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
 
+&lt;hr /&gt;
+
 &lt;ul&gt;
   &lt;li&gt;URL&lt;/li&gt;
-  &lt;li&gt;对应POST URL+body&lt;/li&gt;
-  &lt;li&gt;对应GET URL&lt;/li&gt;
+  &lt;li&gt;对应POST（URL+Body）&lt;/li&gt;
+  &lt;li&gt;对应GET （URL+Body）&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;对应POST的资源创建正确返回结果（StatusCode+Body）&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建正确返回结果（StatusCode+Body）&lt;/li&gt;
+  &lt;li&gt;DELETE的正确返回结果（StatusCode+Body）&lt;/li&gt;
+  &lt;li&gt;对应GET的资源不存在的返回结果（StatusCode+Body）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
 
 &lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
 
@@ -114,6 +170,58 @@
   &lt;li&gt;删除POST创建的资源（&lt;strong&gt;若资源地址在POST返回值中，则需要取得POST返回值&lt;/strong&gt;）&lt;/li&gt;
   &lt;li&gt;使用GET后返回404&lt;/li&gt;
 &lt;/ol&gt;
+
+&lt;h2 id=&quot;head&quot;&gt;HEAD&lt;/h2&gt;
+&lt;p&gt;幂等&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;URL&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;预期的headers列表&lt;/li&gt;
+  &lt;li&gt;预期的状态码&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;使用多种query parameter测试API是否正常&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;options&quot;&gt;OPTIONS&lt;/h2&gt;
+&lt;p&gt;幂等&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;URL&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;预期的headers列表&lt;/li&gt;
+  &lt;li&gt;预期的状态码&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;测试API是否能正常响应不支持的请求&lt;/li&gt;
+&lt;/ul&gt;
 
 </content>
  </entry>
@@ -271,7 +379,10 @@ tc filter add dev calixxxxxxxxxxx parent ffff: protocol ip prio 10 u32 match u32
    <link href="http://localhost:4000/2018/08/02/IFB/"/>
    <updated>2018-08-02T00:00:00+08:00</updated>
    <id>http://localhost:4000/2018/08/02/IFB</id>
-   <content type="html">&lt;h1 id=&quot;ifb&quot;&gt;IFB&lt;/h1&gt;
+   <content type="html">&lt;blockquote&gt;
+  &lt;p&gt;本文翻译自Linux官方IFB文档&lt;/p&gt;
+&lt;/blockquote&gt;
+
 &lt;p&gt;IFB（中介功能块设备）是IMQ（中介队列设备）的继任者，IMQ从来没有被集成过，IFB拥有IMQ的优点，在SMP上更加清晰明了，并且代码量缩减了非常多，旧的中介设备功能仍然保留，但在你使用actions时你需要新的&lt;/p&gt;
 
 &lt;h2 id=&quot;目录&quot;&gt;目录&lt;/h2&gt;

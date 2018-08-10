@@ -3,15 +3,25 @@
 
 <p><strong>参数</strong>：</p>
 
+<hr />
+
 <ul>
   <li>URL</li>
+  <li>请求Body(可选)（URL）</li>
 </ul>
+
+<hr />
+
+<ul>
+  <li>返回结果(StatusCode+Body)</li>
+</ul>
+
+<hr />
 
 <p><strong>测试内容</strong>：</p>
 
 <ol>
-  <li>返回状态码：200</li>
-  <li>返回结果匹配</li>
+  <li>正确返回结果</li>
 </ol>
 
 <h2 id="post">POST</h2>
@@ -19,14 +29,23 @@
 
 <p><strong>参数</strong>：</p>
 
+<hr />
+
 <ul>
   <li>URL</li>
-  <li>正确body</li>
-  <li>错误body</li>
-  <li>对应GET的URL</li>
-  <li>对应GET的资源创建正确返回结果</li>
-  <li>对应GET的资源创建失败返回结果</li>
+  <li>正确请求（Body）</li>
+  <li>错误请求（Body）</li>
+  <li>对应GET（URL+Body）</li>
 </ul>
+
+<hr />
+
+<ul>
+  <li>对应GET的资源创建正确返回结果（StatusCode+Body）</li>
+  <li>对应GET的资源创建失败返回结果（StatusCode+Body）</li>
+</ul>
+
+<hr />
 
 <p><strong>测试内容</strong>：</p>
 
@@ -41,18 +60,29 @@
 
 <p><strong>参数</strong>：</p>
 
+<hr />
+
 <ul>
   <li>URL</li>
-  <li>body</li>
-  <li>对应GET的URL</li>
-  <li>对应GET的资源创建正确返回结果</li>
-  <li>对应GET的资源创建失败返回结果</li>
+  <li>正确请求（Body）</li>
+  <li>错误请求（Body）</li>
+  <li>对应GET（URL+Body）</li>
 </ul>
+
+<hr />
+
+<ul>
+  <li>参数正确的状态码（StatusCode）</li>
+  <li>对应GET的资源创建正确返回结果（StatusCode+Body）</li>
+  <li>对应GET的资源创建失败返回结果（StatusCode+Body）</li>
+</ul>
+
+<hr />
 
 <p><strong>测试内容</strong>：</p>
 
 <ol>
-  <li>参数正确则返回状态码：200</li>
+  <li>参数正确则返回状态码：2xx</li>
   <li>使用对应GET确认资源已创建/更新</li>
   <li>多次相同测试执行结果相同</li>
   <li>参数错误则返回错误并且资源没有创建/更新</li>
@@ -63,10 +93,23 @@
 
 <p><strong>参数</strong>：</p>
 
+<hr />
+
 <ul>
   <li>URL</li>
-  <li>请求体(body)</li>
+  <li>请求体(Body)</li>
+  <li>对应GET（URL+Body）</li>
 </ul>
+
+<hr />
+
+<ul>
+  <li>参数正确的状态码（StatusCode）</li>
+  <li>对应GET的资源创建正确返回结果（StatusCode+Body）</li>
+  <li>对应GET的资源创建失败返回结果（StatusCode+Body）</li>
+</ul>
+
+<hr />
 
 <p><strong>测试内容</strong>：</p>
 
@@ -81,11 +124,24 @@
 
 <p><strong>参数</strong>：</p>
 
+<hr />
+
 <ul>
   <li>URL</li>
-  <li>对应POST URL+body</li>
-  <li>对应GET URL</li>
+  <li>对应POST（URL+Body）</li>
+  <li>对应GET （URL+Body）</li>
 </ul>
+
+<hr />
+
+<ul>
+  <li>对应POST的资源创建正确返回结果（StatusCode+Body）</li>
+  <li>对应GET的资源创建正确返回结果（StatusCode+Body）</li>
+  <li>DELETE的正确返回结果（StatusCode+Body）</li>
+  <li>对应GET的资源不存在的返回结果（StatusCode+Body）</li>
+</ul>
+
+<hr />
 
 <p><strong>测试内容</strong>：</p>
 
@@ -95,4 +151,56 @@
   <li>删除POST创建的资源（<strong>若资源地址在POST返回值中，则需要取得POST返回值</strong>）</li>
   <li>使用GET后返回404</li>
 </ol>
+
+<h2 id="head">HEAD</h2>
+<p>幂等</p>
+
+<p><strong>参数</strong>：</p>
+
+<hr />
+
+<ul>
+  <li>URL</li>
+</ul>
+
+<hr />
+
+<ul>
+  <li>预期的headers列表</li>
+  <li>预期的状态码</li>
+</ul>
+
+<hr />
+
+<p><strong>测试内容</strong>：</p>
+
+<ul>
+  <li>使用多种query parameter测试API是否正常</li>
+</ul>
+
+<h2 id="options">OPTIONS</h2>
+<p>幂等</p>
+
+<p><strong>参数</strong>：</p>
+
+<hr />
+
+<ul>
+  <li>URL</li>
+</ul>
+
+<hr />
+
+<ul>
+  <li>预期的headers列表</li>
+  <li>预期的状态码</li>
+</ul>
+
+<hr />
+
+<p><strong>测试内容</strong>：</p>
+
+<ul>
+  <li>测试API是否能正常响应不支持的请求</li>
+</ul>
 
