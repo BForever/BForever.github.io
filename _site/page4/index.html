@@ -33,93 +33,65 @@
   
   <article class="post">
     <h1 class="post-title">
-      <a href="/2018/07/24/%E5%88%9B%E5%BB%BA%E4%B8%80%E4%B8%AA%E5%8C%85%E5%90%ABTC%E7%9A%84Alpine%E9%95%9C%E5%83%8F/">
-        创建一个包含tc的alpine镜像
+      <a href="/2018/08/03/IFB%E4%B8%8A%E6%8C%82%E8%BD%BDNETEM/">
+        Ifb上挂载netem
       </a>
     </h1>
 
-    <time datetime="2018-07-24T00:00:00+08:00" class="post-date">24 Jul 2018</time>
+    <time datetime="2018-08-03T00:00:00+08:00" class="post-date">03 Aug 2018</time>
 
-    <h1 id="创建一个包含tc的alpine镜像">创建一个包含TC的Alpine镜像</h1>
-
-<h2 id="镜像的创建">镜像的创建</h2>
-
-<ol>
-  <li>更换镜像至ustc（为了测试时的速度）</li>
-  <li>安装musl-dev make gcc linux-headers bison flex以使TC可以编译</li>
-  <li>拷贝进TC的源代码</li>
-  <li>进入源代码文件夹进行编译</li>
-  <li>运行top（或任何不自动退出的程序）以便exec进入容器</li>
-</ol>
-
-<p>Dockerfile如下：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FROM alpine
-
-RUN rm /etc/apk/repositories
-RUN echo -e "http://mirrors.ustc.edu.cn/alpine/v3.8/main\nhttp://mirrors.ustc.edu.cn/alpine/v3.8/community" &gt; /etc/apk/repositories
-
-RUN set -ex \
-        &amp;&amp; apk update &amp;&amp; apk add --no-cache --virtual .build-deps \
-                musl-dev \
-                make \
-                gcc \
-                linux-headers \
-                bison \
-                flex
-
-ADD iproute /code/iproute
-RUN cd code/iproute &amp;&amp; make
-CMD top
+    <h1 id="ifb上挂载netem">IFB上挂载NETEM</h1>
+<h2 id="转发虚拟网卡的ingress">转发虚拟网卡的ingress</h2>
+<h3 id="建立虚拟网卡的ingress转发到ifb0每一个pod">建立虚拟网卡的ingress转发到ifb0（每一个Pod）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calixxxxxxxxxxx ingress
+tc filter add dev calixxxxxxxxxxx parent ffff: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0
 </code></pre></div></div>
 
-<h2 id="部署用yaml的设置">部署用yaml的设置</h2>
-
-<h3 id="tc内核通信权限设置">TC内核通信权限设置</h3>
-<p>由于TC与内核通信并更改网络设置，需要提高容器权限，这需要在YAML文件中进行设置：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spec:
-  containers:
-    securityContext:
-      privileged: true
-</code></pre></div></div>
-<p>这样容器内的TC才有权限通过netlink与内核进行通信</p>
-
-<h3 id="网络设置">网络设置</h3>
-
-<p>TC所在的POD需要能够设置该Node的所有网卡，因此需要设置为hostNetwork网络，另外需要设置DNS以使Pod能以POD的身份访问service</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
+<h3 id="建立ifb0的根队列htb每一个node">建立ifb0的根队列htb（每一个Node）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb0 root handle 1: htb default 0
 </code></pre></div></div>
 
-<p>最后的部署用的YAML如下：</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: test-deployment
-spec:
-  selector:
-    matchLabels:
-      app: test
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: test
-    spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
-      containers:
-      - name: test
-        image: foo
-        imagePullPolicy: Never
-        securityContext:
-          privileged: true
+<h3 id="为x号pod建立一个类1x每一个pod">为x号Pod建立一个类1:x（每一个Pod）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev ifb0 parent 1: classid 1:x htb rate 100mbps
 </code></pre></div></div>
 
+<h3 id="为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod">为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev ifb0 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
+</code></pre></div></div>
+<h3 id="为每一个类建立一个netem队列x11每一个pod">为每一个类建立一个netem队列x+1:1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb0 parent 1:1 handle x+1: netem delay 100ms
+</code></pre></div></div>
+<h2 id="转发虚拟网卡的egress">转发虚拟网卡的egress</h2>
+<h3 id="为虚拟网卡的egress建立htb队列1每一个pod">为虚拟网卡的egress建立HTB队列1:（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calixxxxxxxxxxx root handle 1: htb default 1
+</code></pre></div></div>
+
+<h3 id="为htb建立子类11每一个pod">为HTB建立子类1:1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev calix parent 1: classid 1:1 htb rate 100mbps
+</code></pre></div></div>
+
+<h3 id="为子类建立队列每一个pod">为子类建立队列（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calix parent 1:1 pfifo limit 1600
+</code></pre></div></div>
+
+<h3 id="转发到ifb1每一个pod">转发到IFB1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev calix parent 1: proto ip prio 1 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb1
+</code></pre></div></div>
+
+<h3 id="建立ifb1的根队列htb每一个node">建立ifb1的根队列htb（每一个Node）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb1 root handle 1: htb default 0
+</code></pre></div></div>
+
+<h3 id="为x号pod建立一个类1x每一个pod-1">为x号Pod建立一个类1:x（每一个Pod）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev ifb1 parent 1: classid 1:x htb rate 100mbps
+</code></pre></div></div>
+
+<h3 id="为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod-1">为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev ifb1 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
+</code></pre></div></div>
+<h3 id="为每一个类建立一个netem队列x11每一个pod-1">为每一个类建立一个netem队列x+1:1（每一个Pod）</h3>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb1 parent 1:1 handle x+1: netem delay 100ms
+</code></pre></div></div>
 
   </article>
   
@@ -138,7 +110,7 @@ spec:
 
       <footer class="footer">
         <small>
-          &copy; <time datetime="2018-08-09T20:29:49+08:00">2018</time>. All rights reserved.
+          &copy; <time datetime="2018-08-10T15:12:28+08:00">2018</time>. All rights reserved.
         </small>
       </footer>
     </div>

@@ -4,13 +4,182 @@
  <title>BForever</title>
  <link href="http://localhost:4000/atom.xml" rel="self"/>
  <link href="http://localhost:4000/"/>
- <updated>2018-08-09T20:29:49+08:00</updated>
+ <updated>2018-08-10T15:12:28+08:00</updated>
  <id>http://localhost:4000</id>
  <author>
    <name>FanHongchang</name>
    <email>11fhc@163.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Restfulapi测试策略和参数</title>
+   <link href="http://localhost:4000/2018/08/10/RESTfulAPI%E6%B5%8B%E8%AF%95%E7%AD%96%E7%95%A5%E5%92%8C%E5%8F%82%E6%95%B0/"/>
+   <updated>2018-08-10T00:00:00+08:00</updated>
+   <id>http://localhost:4000/2018/08/10/RESTfulAPI测试策略和参数</id>
+   <content type="html">&lt;h2 id=&quot;get&quot;&gt;GET&lt;/h2&gt;
+&lt;p&gt;幂等&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;URL&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;返回状态码：200&lt;/li&gt;
+  &lt;li&gt;返回结果匹配&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;post&quot;&gt;POST&lt;/h2&gt;
+&lt;p&gt;非幂等&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;URL&lt;/li&gt;
+  &lt;li&gt;正确body&lt;/li&gt;
+  &lt;li&gt;错误body&lt;/li&gt;
+  &lt;li&gt;对应GET的URL&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建正确返回结果&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建失败返回结果&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;参数正确则返回状态码：200&lt;/li&gt;
+  &lt;li&gt;使用对应GET确认资源已创建/更新&lt;/li&gt;
+  &lt;li&gt;参数错误则返回错误或资源创建/更新失败&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;put&quot;&gt;PUT&lt;/h2&gt;
+&lt;p&gt;幂等&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;URL&lt;/li&gt;
+  &lt;li&gt;body&lt;/li&gt;
+  &lt;li&gt;对应GET的URL&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建正确返回结果&lt;/li&gt;
+  &lt;li&gt;对应GET的资源创建失败返回结果&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;参数正确则返回状态码：200&lt;/li&gt;
+  &lt;li&gt;使用对应GET确认资源已创建/更新&lt;/li&gt;
+  &lt;li&gt;多次相同测试执行结果相同&lt;/li&gt;
+  &lt;li&gt;参数错误则返回错误并且资源没有创建/更新&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;patch&quot;&gt;PATCH&lt;/h2&gt;
+&lt;p&gt;非幂等&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;URL&lt;/li&gt;
+  &lt;li&gt;请求体(body)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;参数正确则返回状态码：2xx&lt;/li&gt;
+  &lt;li&gt;使用对应GET确认资源已更新&lt;/li&gt;
+  &lt;li&gt;参数错误则返回错误并且资源没有创建/更新&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;delete&quot;&gt;DELETE&lt;/h2&gt;
+&lt;p&gt;幂等&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;参数&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;URL&lt;/li&gt;
+  &lt;li&gt;对应POST URL+body&lt;/li&gt;
+  &lt;li&gt;对应GET URL&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;测试内容&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;使用POST创建资源&lt;/li&gt;
+  &lt;li&gt;使用GET确认资源已创建&lt;/li&gt;
+  &lt;li&gt;删除POST创建的资源（&lt;strong&gt;若资源地址在POST返回值中，则需要取得POST返回值&lt;/strong&gt;）&lt;/li&gt;
+  &lt;li&gt;使用GET后返回404&lt;/li&gt;
+&lt;/ol&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Chaos错误管理</title>
+   <link href="http://localhost:4000/2018/08/10/Chaos%E9%94%99%E8%AF%AF%E7%AE%A1%E7%90%86/"/>
+   <updated>2018-08-10T00:00:00+08:00</updated>
+   <id>http://localhost:4000/2018/08/10/Chaos错误管理</id>
+   <content type="html">&lt;h1 id=&quot;chaos错误管理&quot;&gt;Chaos错误管理&lt;/h1&gt;
+&lt;h2 id=&quot;错误类型&quot;&gt;错误类型&lt;/h2&gt;
+&lt;h3 id=&quot;错误操作&quot;&gt;错误操作&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;参数设置缺失&lt;/li&gt;
+  &lt;li&gt;参数设置错误&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;意外重启&quot;&gt;意外重启&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;在ifb初始化过程中意外退出（全局，执行一次）&lt;/li&gt;
+  &lt;li&gt;在网卡转发规则设置过程中意外退出（单Pod，执行一次）&lt;/li&gt;
+  &lt;li&gt;在netem设置过程中意外退出（全局，执行多次）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;解决方案&quot;&gt;解决方案&lt;/h2&gt;
+&lt;h3 id=&quot;错误操作-1&quot;&gt;错误操作&lt;/h3&gt;
+&lt;ul&gt;
+  &lt;li&gt;参数设置缺失&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;设置前检查参数，为空时按清空设置处理&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;参数设置错误&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;TC返回错误时，清空设置，产生错误日志，在done标志上标记”error”&lt;/p&gt;
+
+&lt;h3 id=&quot;意外重启-1&quot;&gt;意外重启&lt;/h3&gt;
+&lt;p&gt;首先整理重启后仍然存在的设置：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;ifb本身&lt;/li&gt;
+  &lt;li&gt;各个Pod网卡的转发规则&lt;/li&gt;
+  &lt;li&gt;ifb上各个Pod的设置&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;在ifb初始化过程中意外退出（全局，执行一次）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;启动时检测ifb是否已经工作，如果是，则不再初始化ifb&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;在网卡转发规则设置过程中意外退出（单Pod，执行一次）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;在每次netem设置前检查转发规则，若规则有误，则重置转发规则&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;在netem设置过程中意外退出（全局，执行多次）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;不需要额外处理，因为更新标志未被覆盖，因此下次重启会再次设置&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>无法下载golang.org X Net解决方法</title>
@@ -772,52 +941,52 @@ void gpiod_set_value_cansleep(struct gpio_desc * desc，int value)
     &lt;th&gt;物理线路&lt;/th&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_raw\_value(desc, 0);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_raw_value(desc, 0);&lt;/td&gt;
     &lt;td&gt;-&lt;/td&gt;
     &lt;td&gt;低电平&lt;/td&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_raw\_value(desc, 0);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_raw_value(desc, 0);&lt;/td&gt;
     &lt;td&gt;-&lt;/td&gt;
     &lt;td&gt;高电平&lt;/td&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 0);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 0);&lt;/td&gt;
     &lt;td&gt;默认（高电平有效）&lt;/td&gt;
     &lt;td&gt;低电平&lt;/td&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 1);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 1);&lt;/td&gt;
     &lt;td&gt;默认（高电平有效）&lt;/td&gt;
     &lt;td&gt;高电平&lt;/td&gt;
   &lt;/tr&gt;
  &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 0);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 0);&lt;/td&gt;
     &lt;td&gt;低电平有效&lt;/td&gt;
     &lt;td&gt;高电平&lt;/td&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 1);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 1);&lt;/td&gt;
     &lt;td&gt;低电平有效&lt;/td&gt;
     &lt;td&gt;低电平&lt;/td&gt;
   &lt;/tr&gt;
 &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 0);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 0);&lt;/td&gt;
     &lt;td&gt;开漏&lt;/td&gt;
     &lt;td&gt;低电平&lt;/td&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 1);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 1);&lt;/td&gt;
     &lt;td&gt;开漏&lt;/td&gt;
     &lt;td&gt;高阻态&lt;/td&gt;
   &lt;/tr&gt;
 &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 0);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 0);&lt;/td&gt;
     &lt;td&gt;开漏&lt;/td&gt;
     &lt;td&gt;高阻态&lt;/td&gt;
   &lt;/tr&gt;
   &lt;tr&gt;
-    &lt;td&gt;gpiod\_set\_value(desc, 1);&lt;/td&gt;
+    &lt;td&gt;gpiod_set_value(desc, 1);&lt;/td&gt;
     &lt;td&gt;开漏&lt;/td&gt;
     &lt;td&gt;高电平&lt;/td&gt;
   &lt;/tr&gt;
