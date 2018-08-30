@@ -1,4 +1,3 @@
-# IFB上挂载NETEM
 ## 转发虚拟网卡的ingress
 ### 建立虚拟网卡的ingress转发到ifb0（每一个Pod）：
 ```

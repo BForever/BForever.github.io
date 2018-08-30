@@ -1,4 +1,3 @@
-# 在K8S上跑一个helloworld
 ## 建立docker镜像
 为了方便起见，这里直接使用一个js网页作为应用，以此创建镜像
 ### hello world网页
