@@ -33,65 +33,68 @@
   
   <article class="post">
     <h1 class="post-title">
-      <a href="/2018/08/03/IFB%E4%B8%8A%E6%8C%82%E8%BD%BDNETEM/">
-        Ifb上挂载netem
+      <a href="/2018/08/10/Chaos%E9%94%99%E8%AF%AF%E7%AE%A1%E7%90%86/">
+        Chaos错误管理
       </a>
     </h1>
 
-    <time datetime="2018-08-03T00:00:00+08:00" class="post-date">03 Aug 2018</time>
+    <time datetime="2018-08-10T00:00:00+08:00" class="post-date">10 Aug 2018</time>
 
-    <h1 id="ifb上挂载netem">IFB上挂载NETEM</h1>
-<h2 id="转发虚拟网卡的ingress">转发虚拟网卡的ingress</h2>
-<h3 id="建立虚拟网卡的ingress转发到ifb0每一个pod">建立虚拟网卡的ingress转发到ifb0（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calixxxxxxxxxxx ingress
-tc filter add dev calixxxxxxxxxxx parent ffff: protocol ip prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0
-</code></pre></div></div>
+    <h1 id="chaos错误管理">Chaos错误管理</h1>
+<h2 id="错误类型">错误类型</h2>
+<h3 id="错误操作">错误操作</h3>
+<ul>
+  <li>参数设置缺失</li>
+  <li>参数设置错误</li>
+</ul>
 
-<h3 id="建立ifb0的根队列htb每一个node">建立ifb0的根队列htb（每一个Node）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb0 root handle 1: htb default 0
-</code></pre></div></div>
+<h3 id="意外重启">意外重启</h3>
+<ul>
+  <li>在ifb初始化过程中意外退出（全局，执行一次）</li>
+  <li>在网卡转发规则设置过程中意外退出（单Pod，执行一次）</li>
+  <li>在netem设置过程中意外退出（全局，执行多次）</li>
+</ul>
 
-<h3 id="为x号pod建立一个类1x每一个pod">为x号Pod建立一个类1:x（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev ifb0 parent 1: classid 1:x htb rate 100mbps
-</code></pre></div></div>
+<h2 id="解决方案">解决方案</h2>
+<h3 id="错误操作-1">错误操作</h3>
+<ul>
+  <li>参数设置缺失</li>
+</ul>
 
-<h3 id="为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod">为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev ifb0 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
-</code></pre></div></div>
-<h3 id="为每一个类建立一个netem队列x11每一个pod">为每一个类建立一个netem队列x+1:1（每一个Pod）</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb0 parent 1:1 handle x+1: netem delay 100ms
-</code></pre></div></div>
-<h2 id="转发虚拟网卡的egress">转发虚拟网卡的egress</h2>
-<h3 id="为虚拟网卡的egress建立htb队列1每一个pod">为虚拟网卡的egress建立HTB队列1:（每一个Pod）</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calixxxxxxxxxxx root handle 1: htb default 1
-</code></pre></div></div>
+<p>设置前检查参数，为空时按清空设置处理</p>
 
-<h3 id="为htb建立子类11每一个pod">为HTB建立子类1:1（每一个Pod）</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev calix parent 1: classid 1:1 htb rate 100mbps
-</code></pre></div></div>
+<ul>
+  <li>参数设置错误</li>
+</ul>
 
-<h3 id="为子类建立队列每一个pod">为子类建立队列（每一个Pod）</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev calix parent 1:1 pfifo limit 1600
-</code></pre></div></div>
+<p>TC返回错误时，清空设置，产生错误日志，在done标志上标记”error”</p>
 
-<h3 id="转发到ifb1每一个pod">转发到IFB1（每一个Pod）</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev calix parent 1: proto ip prio 1 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb1
-</code></pre></div></div>
+<h3 id="意外重启-1">意外重启</h3>
+<p>首先整理重启后仍然存在的设置：</p>
 
-<h3 id="建立ifb1的根队列htb每一个node">建立ifb1的根队列htb（每一个Node）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb1 root handle 1: htb default 0
-</code></pre></div></div>
+<ol>
+  <li>ifb本身</li>
+  <li>各个Pod网卡的转发规则</li>
+  <li>ifb上各个Pod的设置</li>
+</ol>
 
-<h3 id="为x号pod建立一个类1x每一个pod-1">为x号Pod建立一个类1:x（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc class add dev ifb1 parent 1: classid 1:x htb rate 100mbps
-</code></pre></div></div>
+<ul>
+  <li>在ifb初始化过程中意外退出（全局，执行一次）</li>
+</ul>
 
-<h3 id="为podx的ipxxxx建立一个过滤器使来自该podx的流量进入子类1x每一个pod-1">为Podx的IPx.x.x.x建立一个过滤器，使来自该Podx的流量进入子类1:x（每一个Pod）：</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc filter add dev ifb1 protocol ip parent 1:0 prio 1 u32 match ip src x.x.x.x flowid 1:x
-</code></pre></div></div>
-<h3 id="为每一个类建立一个netem队列x11每一个pod-1">为每一个类建立一个netem队列x+1:1（每一个Pod）</h3>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tc qdisc add dev ifb1 parent 1:1 handle x+1: netem delay 100ms
-</code></pre></div></div>
+<p>启动时检测ifb是否已经工作，如果是，则不再初始化ifb</p>
+
+<ul>
+  <li>在网卡转发规则设置过程中意外退出（单Pod，执行一次）</li>
+</ul>
+
+<p>在每次netem设置前检查转发规则，若规则有误，则重置转发规则</p>
+
+<ul>
+  <li>在netem设置过程中意外退出（全局，执行多次）</li>
+</ul>
+
+<p>不需要额外处理，因为更新标志未被覆盖，因此下次重启会再次设置</p>
 
   </article>
   
@@ -110,7 +113,7 @@ tc filter add dev calixxxxxxxxxxx parent ffff: protocol ip prio 10 u32 match u32
 
       <footer class="footer">
         <small>
-          &copy; <time datetime="2018-08-10T16:38:04+08:00">2018</time>. All rights reserved.
+          &copy; <time datetime="2018-08-30T17:40:45+08:00">2018</time>. All rights reserved.
         </small>
       </footer>
     </div>
